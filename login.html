@@ -2,90 +2,75 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Login with Spotify</title>
-
-  <!-- Tailwind -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Redirecting to Spotify…</title>
   <script src="https://cdn.tailwindcss.com"></script>
-
-  <style>
-    body {
-      background-color: #000000;
-    }
-  </style>
+  <style>body{background:#000}</style>
 </head>
-<body class="flex items-center justify-center h-screen text-center px-6">
-  <div class="max-w-lg w-full bg-gray-900 p-10 rounded-2xl shadow-lg">
-    <!-- Spotify Logo -->
-    <img 
-      src="https://upload.wikimedia.org/wikipedia/commons/1/19/Spotify_logo_without_text.svg" 
-      alt="Spotify Logo" 
-      class="mx-auto w-20 mb-6"
+<body class="min-h-screen flex items-center justify-center text-white px-6">
+  <div class="w-full max-w-xl bg-gray-900 rounded-2xl p-8 shadow-lg text-center">
+    <img
+      src="https://upload.wikimedia.org/wikipedia/commons/1/19/Spotify_logo_without_text.svg"
+      alt="Spotify"
+      class="w-16 mx-auto mb-5"
     />
+    <h1 class="text-2xl font-bold mb-2">Connecting to Spotify…</h1>
+    <p class="text-gray-400 mb-6">If you aren’t redirected, use the test link below.</p>
 
-    <h1 class="text-3xl md:text-4xl font-bold text-white mb-4">
-      Connect Your Spotify
-    </h1>
-    <p class="text-gray-400 mb-8">
-      Login with Spotify to view your currently playing track and generate a live activity widget for your website.
-    </p>
+    <div class="space-y-4">
+      <button id="go" class="px-6 py-3 bg-green-500 hover:bg-green-600 rounded-full font-semibold">
+        Continue to Spotify
+      </button>
 
-    <!-- Login Button -->
-    <button id="login-btn" class="px-8 py-3 bg-green-500 text-white rounded-full text-lg font-semibold shadow-md hover:bg-green-600 transition">
-      Login with Spotify
-    </button>
+      <div class="text-left bg-gray-800 rounded-lg p-4">
+        <p class="text-sm text-gray-300 mb-2 font-medium">Auth URL (debug):</p>
+        <code id="authUrl" class="break-all text-xs block text-gray-400"></code>
+        <a id="authAnchor" href="#" class="inline-block mt-3 text-green-400 underline">Open Auth in a new tab</a>
+      </div>
 
-    <!-- Playback Info -->
-    <div id="player-info" class="mt-10 hidden">
-      <img id="album-art" src="" alt="Album Art" class="mx-auto rounded-lg shadow-md w-40 mb-4" />
-      <h2 id="track-name" class="text-xl font-semibold text-white"></h2>
-      <p id="artist-name" class="text-gray-300"></p>
-      <p id="status" class="text-sm text-gray-400 mt-2"></p>
+      <p id="err" class="text-red-400 text-sm hidden"></p>
     </div>
   </div>
 
   <script>
-    const clientId = "b032c5792586420a80045802590c8b41"; // replace with your Client ID
-    const redirectUri = window.location.origin + "/login.html";
-    const scopes = "user-read-currently-playing user-read-playback-state";
+    // >>>>>> EDIT THIS <<<<<<
+    const clientId = "b032c5792586420a80045802590c8b41"; // paste exact Client ID
+    // Use your deployed origin + live.html
+    const redirectUri = "https://spotify-live-xi.vercel.app/live.html";
+    const scopes = [
+      "user-read-currently-playing",
+      "user-read-playback-state"
+    ].join(" ");
 
-    document.getElementById("login-btn").addEventListener("click", () => {
-      const authUrl = `https://accounts.spotify.com/authorize?client_id=${clientId}&response_type=token&redirect_uri=${encodeURIComponent(
-        redirectUri
-      )}&scope=${encodeURIComponent(scopes)}`;
-      window.location.href = authUrl;
+    const base = "https://accounts.spotify.com/authorize";
+    const params = new URLSearchParams({
+      client_id: clientId,
+      response_type: "token",
+      redirect_uri: redirectUri,
+      scope: scopes
     });
 
-    // Handle redirect back with access_token in URL
-    window.onload = () => {
-      const hash = window.location.hash.substring(1);
-      const params = new URLSearchParams(hash);
-      const accessToken = params.get("access_token");
+    const authUrl = `${base}?${params.toString()}`;
 
-      if (accessToken) {
-        document.getElementById("login-btn").classList.add("hidden");
+    // Populate debug UI
+    document.getElementById("authUrl").textContent = authUrl;
+    document.getElementById("authAnchor").href = authUrl;
 
-        fetch("https://api.spotify.com/v1/me/player/currently-playing", {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        })
-          .then((res) => res.json())
-          .then((data) => {
-            if (data && data.item) {
-              const playerInfo = document.getElementById("player-info");
-              playerInfo.classList.remove("hidden");
-              document.getElementById("album-art").src = data.item.album.images[0].url;
-              document.getElementById("track-name").innerText = data.item.name;
-              document.getElementById("artist-name").innerText = data.item.artists.map(a => a.name).join(", ");
-              document.getElementById("status").innerText = data.is_playing ? "▶️ Playing" : "⏸️ Paused";
-            } else {
-              document.getElementById("status").innerText = "No track currently playing";
-            }
-          })
-          .catch((err) => console.error(err));
-      }
-    };
+    // Go now
+    const go = () => window.location.assign(authUrl);
+    document.getElementById("go").addEventListener("click", go);
+
+    // If Spotify redirected back here with an error param, show it
+    const urlParams = new URLSearchParams(window.location.search);
+    const error = urlParams.get("error");
+    if (error) {
+      const m = document.getElementById("err");
+      m.textContent = `Spotify error: ${error}`;
+      m.classList.remove("hidden");
+    }
+
+    // Auto attempt after a tiny delay
+    setTimeout(go, 400);
   </script>
 </body>
 </html>

@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login with Spotify</title>
+
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    body {
+      background-color: #000000;
+    }
+  </style>
+</head>
+<body class="flex items-center justify-center h-screen text-center px-6">
+  <div class="max-w-lg w-full bg-gray-900 p-10 rounded-2xl shadow-lg">
+    <!-- Spotify Logo -->
+    <img 
+      src="https://upload.wikimedia.org/wikipedia/commons/1/19/Spotify_logo_without_text.svg" 
+      alt="Spotify Logo" 
+      class="mx-auto w-20 mb-6"
+    />
+
+    <h1 class="text-3xl md:text-4xl font-bold text-white mb-4">
+      Connect Your Spotify
+    </h1>
+    <p class="text-gray-400 mb-8">
+      Login with Spotify to view your currently playing track and generate a live activity widget for your website.
+    </p>
+
+    <!-- Login Button -->
+    <button id="login-btn" class="px-8 py-3 bg-green-500 text-white rounded-full text-lg font-semibold shadow-md hover:bg-green-600 transition">
+      Login with Spotify
+    </button>
+
+    <!-- Playback Info -->
+    <div id="player-info" class="mt-10 hidden">
+      <img id="album-art" src="" alt="Album Art" class="mx-auto rounded-lg shadow-md w-40 mb-4" />
+      <h2 id="track-name" class="text-xl font-semibold text-white"></h2>
+      <p id="artist-name" class="text-gray-300"></p>
+      <p id="status" class="text-sm text-gray-400 mt-2"></p>
+    </div>
+  </div>
+
+  <script>
+    const clientId = "b032c5792586420a80045802590c8b41"; // replace with your Client ID
+    const redirectUri = window.location.origin + "/login.html";
+    const scopes = "user-read-currently-playing user-read-playback-state";
+
+    document.getElementById("login-btn").addEventListener("click", () => {
+      const authUrl = `https://accounts.spotify.com/authorize?client_id=${clientId}&response_type=token&redirect_uri=${encodeURIComponent(
+        redirectUri
+      )}&scope=${encodeURIComponent(scopes)}`;
+      window.location.href = authUrl;
+    });
+
+    // Handle redirect back with access_token in URL
+    window.onload = () => {
+      const hash = window.location.hash.substring(1);
+      const params = new URLSearchParams(hash);
+      const accessToken = params.get("access_token");
+
+      if (accessToken) {
+        document.getElementById("login-btn").classList.add("hidden");
+
+        fetch("https://api.spotify.com/v1/me/player/currently-playing", {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            if (data && data.item) {
+              const playerInfo = document.getElementById("player-info");
+              playerInfo.classList.remove("hidden");
+              document.getElementById("album-art").src = data.item.album.images[0].url;
+              document.getElementById("track-name").innerText = data.item.name;
+              document.getElementById("artist-name").innerText = data.item.artists.map(a => a.name).join(", ");
+              document.getElementById("status").innerText = data.is_playing ? "▶️ Playing" : "⏸️ Paused";
+            } else {
+              document.getElementById("status").innerText = "No track currently playing";
+            }
+          })
+          .catch((err) => console.error(err));
+      }
+    };
+  </script>
+</body>
+</html>

@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Your Spotify Activity</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>body{background:#000}</style>
+</head>
+<body class="min-h-screen flex items-center justify-center text-white px-6">
+  <div class="w-full max-w-xl bg-gray-900 rounded-2xl p-8 shadow-lg text-center">
+    <img
+      src="https://upload.wikimedia.org/wikipedia/commons/1/19/Spotify_logo_without_text.svg"
+      alt="Spotify"
+      class="w-12 mx-auto mb-4"
+    />
+    <h1 class="text-2xl font-bold mb-2">Your Spotify Activity</h1>
+    <p id="loading" class="text-gray-400 mb-6">Fetching your current track…</p>
+
+    <div id="player" class="hidden">
+      <img id="art" class="w-40 h-40 object-cover rounded-xl mx-auto mb-4" alt="Album Art"/>
+      <h2 id="track" class="text-xl font-semibold"></h2>
+      <p id="artist" class="text-gray-300"></p>
+      <p id="state" class="text-sm text-gray-400 mt-2"></p>
+    </div>
+
+    <p id="err" class="text-red-400 hidden"></p>
+  </div>
+
+  <script>
+    function parseHash() {
+      const hash = window.location.hash.startsWith("#")
+        ? window.location.hash.slice(1)
+        : window.location.hash;
+      const p = new URLSearchParams(hash);
+      return p.get("access_token");
+    }
+
+    async function fetchNowPlaying(token) {
+      const r = await fetch("https://api.spotify.com/v1/me/player/currently-playing", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (r.status === 204) return null; // no content
+      if (!r.ok) throw new Error(`${r.status} ${r.statusText}`);
+      return r.json();
+    }
+
+    async function render() {
+      const token = parseHash();
+      if (!token) {
+        document.getElementById("loading").textContent = "No access token found.";
+        return;
+      }
+
+      try {
+        const data = await fetchNowPlaying(token);
+        document.getElementById("loading").classList.add("hidden");
+
+        if (data && data.item) {
+          document.getElementById("player").classList.remove("hidden");
+          document.getElementById("art").src = data.item.album.images?.[0]?.url || "";
+          document.getElementById("track").textContent = data.item.name || "Unknown Track";
+          document.getElementById("artist").textContent = (data.item.artists || []).map(a => a.name).join(", ");
+          document.getElementById("state").textContent = data.is_playing ? "▶️ Playing" : "⏸️ Paused";
+        } else {
+          document.getElementById("loading").textContent = "No track currently playing.";
+        }
+      } catch (e) {
+        document.getElementById("err").textContent = `Error: ${e.message}`;
+        document.getElementById("err").classList.remove("hidden");
+      }
+    }
+
+    render();
+    // Optional: refresh every 15s
+    setInterval(render, 15000);
+  </script>
+</body>
+</html>

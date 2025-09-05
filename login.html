@@ -33,45 +33,40 @@
   </div>
 
 <script>
-  const clientId = "b032c5792586420a80045802590c8b41"; // your client id
-  const redirectUri = "https://spotify-live-xi.vercel.app/live.html"; 
+  const clientId = "b032c5792586420a80045802590c8b41";
+  const redirectUri = "https://spotify-live-xi.vercel.app/live.html";
   const scopes = [
     "user-read-currently-playing",
     "user-read-playback-state"
   ];
 
-  // Build once so it's globally available
- const authUrl = `https://accounts.spotify.com/authorize?client_id=${clientId}&response_type=token&redirect_uri=${encodeURIComponent(
-  redirectUri
-)}&scope=${encodeURIComponent(scopes.join(" "))}&show_dialog=true`;
+  async function generateCodeChallenge(codeVerifier) {
+    const data = new TextEncoder().encode(codeVerifier);
+    const digest = await crypto.subtle.digest('SHA-256', data);
+    return btoa(String.fromCharCode(...new Uint8Array(digest)))
+      .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  }
 
-  function loginWithSpotify() {
+  function generateRandomString(length) {
+    const array = new Uint8Array(length);
+    crypto.getRandomValues(array);
+    return [...array].map(x => x.toString(36)[0]).join('');
+  }
+
+  document.getElementById("go").addEventListener("click", async () => {
+    const codeVerifier = generateRandomString(128);
+    const codeChallenge = await generateCodeChallenge(codeVerifier);
+    const state = generateRandomString(16);
+
+    // Store verifier in localStorage for retrieval on live.html
+    localStorage.setItem("spotify_code_verifier", codeVerifier);
+
+    const authUrl = `https://accounts.spotify.com/authorize?response_type=code&client_id=${clientId}&scope=${encodeURIComponent(scopes.join(" "))}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}&code_challenge_method=S256&code_challenge=${codeChallenge}`;
+
     window.location.href = authUrl;
-  }
-
-  // Populate debug UI (if you have elements for this)
-  const urlBox = document.getElementById("authUrl");
-  const urlAnchor = document.getElementById("authAnchor");
-  if (urlBox) urlBox.textContent = authUrl;
-  if (urlAnchor) urlAnchor.href = authUrl;
-
-  // Attach button
-  const goButton = document.getElementById("go");
-  if (goButton) {
-    goButton.addEventListener("click", () => window.location.assign(authUrl));
-  }
-
-  // Error handler
-  const urlParams = new URLSearchParams(window.location.search);
-  const error = urlParams.get("error");
-  if (error) {
-    const m = document.getElementById("err");
-    if (m) {
-      m.textContent = `Spotify error: ${error}`;
-      m.classList.remove("hidden");
-    }
-  }
+  });
 </script>
+
 
 </body>
 </html>

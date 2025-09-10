@@ -70,7 +70,7 @@
       });
 
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error_description || "Failed to get access token.");
+      
       return data.access_token;
     }
 

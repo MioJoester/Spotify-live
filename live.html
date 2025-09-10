@@ -24,6 +24,25 @@
       <p id="state" class="text-sm text-gray-400 mt-2"></p>
     </div>
 
+    <div class="w-full mt-4">
+  <div class="flex justify-between text-sm text-gray-400 mb-1">
+    <span id="currentTime">0:00</span>
+    <span id="totalTime">0:00</span>
+  </div>
+  <div class="w-full bg-gray-700 rounded-full h-2 overflow-hidden">
+    <div id="progressBar" class="bg-green-500 h-2 rounded-full transition-all duration-500 ease-linear" style="width: 0%"></div>
+  </div>
+</div>
+<div class="w-full mt-4">
+  <div class="flex justify-between text-sm text-gray-400 mb-1">
+    <span id="currentTime">0:00</span>
+    <span id="totalTime">0:00</span>
+  </div>
+  <div class="w-full bg-gray-700 rounded-full h-2 overflow-hidden">
+    <div id="progressBar" class="bg-green-500 h-2 rounded-full transition-all duration-500 ease-linear" style="width: 0%"></div>
+  </div>
+</div>
+
     <p id="err" class="text-transperant hidden"></p>
   </div>
 
@@ -66,48 +85,69 @@
       return r.json();
     }
 
-    async function render() {
-      const params = new URLSearchParams(window.location.search);
-      const code = params.get("code");
-      let token = sessionStorage.getItem("spotify_access_token");
+  function formatTime(ms) {
+  const totalSeconds = Math.floor(ms / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+}
 
-      if (code && !token) {
-        try {
-          token = await getAccessToken(code);
-          sessionStorage.setItem("spotify_access_token", token);
-          // Clean the URL to remove ?code=XYZ
-          window.history.replaceState({}, document.title, window.location.pathname);
-        } catch (e) {
-          document.getElementById("loading").textContent = "Auth failed.";
-          document.getElementById("err").textContent = e.message;
-          document.getElementById("err").classList.remove("hidden");
-          return;
-        }
-      }
+async function render() {
+  const params = new URLSearchParams(window.location.search);
+  const code = params.get("code");
+  let token = sessionStorage.getItem("spotify_access_token");
 
-      if (!token) {
-        document.getElementById("loading").textContent = "No access token found.";
-        return;
-      }
-
-      try {
-        const data = await fetchNowPlaying(token);
-        document.getElementById("loading").classList.add("hidden");
-
-        if (data && data.item) {
-          document.getElementById("player").classList.remove("hidden");
-          document.getElementById("art").src = data.item.album.images?.[0]?.url || "";
-          document.getElementById("track").textContent = data.item.name || "Unknown Track";
-          document.getElementById("artist").textContent = (data.item.artists || []).map(a => a.name).join(", ");
-          document.getElementById("state").textContent = data.is_playing ? "▶️ Playing" : "⏸️ Paused";
-        } else {
-          document.getElementById("loading").textContent = "No track currently playing.";
-        }
-      } catch (e) {
-        document.getElementById("err").textContent = `Error: ${e.message}`;
-        document.getElementById("err").classList.remove("hidden");
-      }
+  if (code && !token) {
+    try {
+      token = await getAccessToken(code);
+      sessionStorage.setItem("spotify_access_token", token);
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } catch (e) {
+      document.getElementById("loading").textContent = "Auth failed.";
+      document.getElementById("err").textContent = e.message;
+      document.getElementById("err").classList.remove("hidden");
+      return;
     }
+  }
+
+  if (!token) {
+    document.getElementById("loading").textContent = "No access token found.";
+    return;
+  }
+
+  try {
+    const data = await fetchNowPlaying(token);
+    document.getElementById("loading").classList.add("hidden");
+
+    if (data && data.item) {
+      const item = data.item;
+      const isPlaying = data.is_playing;
+      const progress = data.progress_ms || 0;
+      const duration = item.duration_ms || 1;
+
+      // Show the player
+      document.getElementById("player").classList.remove("hidden");
+
+      // Update album art, track name, artist(s), state
+      document.getElementById("art").src = item.album.images?.[0]?.url || "";
+      document.getElementById("track").textContent = item.name || "Unknown Track";
+      document.getElementById("artist").textContent = (item.artists || []).map(a => a.name).join(", ");
+      document.getElementById("state").textContent = isPlaying ? "▶️ Playing" : "⏸️ Paused";
+
+      // Update progress bar and time
+      document.getElementById("currentTime").textContent = formatTime(progress);
+      document.getElementById("totalTime").textContent = formatTime(duration);
+      const percent = (progress / duration) * 100;
+      document.getElementById("progressBar").style.width = `${percent}%`;
+
+    } else {
+      document.getElementById("loading").textContent = "No track currently playing.";
+    }
+  } catch (e) {
+    document.getElementById("err").textContent = `Error: ${e.message}`;
+    document.getElementById("err").classList.remove("hidden");
+  }
+}
 
     render();
     setInterval(render, 15000);

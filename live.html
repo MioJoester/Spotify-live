@@ -150,7 +150,7 @@ async function render() {
 }
 
     render();
-    setInterval(render, 15000);
+    setInterval(render, 5000);
 
     async function likeSong() {
   if (!currentTrackId) return;
@@ -166,8 +166,7 @@ async function render() {
 document.getElementById("like-button").addEventListener("click", likeSong);
 
 // Auto-refresh currently playing every 5s
-setInterval(fetchCurrentlyPlaying, 5000);
-fetchCurrentlyPlaying();
+
   </script>
 </body>
 </html>

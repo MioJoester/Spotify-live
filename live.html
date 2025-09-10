@@ -142,7 +142,7 @@ async function render() {
       document.getElementById("loading").textContent = "No track currently playing.";
     }
   } catch (e) {
-    document.getElementById("err").textContent = `Error: ${e.message}`;
+    document.getElementById("err").textContent = "";
     document.getElementById("err").classList.remove("hidden");
   }
 }

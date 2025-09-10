@@ -36,7 +36,9 @@
 </div>
 <div class="w-full mt-4">
 
-  
+    <button id="like-button" class="mt-4 px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600">
+    + Add to Liked Songs
+  </button>
    
   </div>
 </div>
@@ -149,6 +151,23 @@ async function render() {
 
     render();
     setInterval(render, 15000);
+
+    async function likeSong() {
+  if (!currentTrackId) return;
+
+  await fetch(`https://api.spotify.com/v1/me/tracks?ids=${currentTrackId}`, {
+    method: "PUT",
+    headers: { Authorization: `Bearer ${accessToken}` }
+  });
+
+  alert("Song added to your Liked Songs 💚");
+}
+
+document.getElementById("like-button").addEventListener("click", likeSong);
+
+// Auto-refresh currently playing every 5s
+setInterval(fetchCurrentlyPlaying, 5000);
+fetchCurrentlyPlaying();
   </script>
 </body>
 </html>

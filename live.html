@@ -5,6 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Your Spotify Activity</title>
   <meta name="theme-color" content="#000000" />
+  <meta name="description" content="See what's currently playing on Spotify. Built with the Spotify API.">
+<meta property="og:title" content="Now Playing on Spotify">
+<meta property="og:description" content="Live display of your current Spotify track.">
+<meta property="og:image" content="https://spotify-live-xi.vercel.app/Asset/Icon.jpg">
+<meta name="theme-color" content="#000000">
+
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"> 
 
   <!-- card to share img converter -->
@@ -201,10 +207,21 @@ function captureNowPlaying() {
   const nowPlayingCard = document.getElementById("nowPlayingCard");
 
   html2canvas(nowPlayingCard).then(canvas => {
-    const link = document.createElement("a");
-    link.download = "now-playing.png";
-    link.href = canvas.toDataURL("image/png");
-    link.click();
+    // Add canvas to the page for preview (optional)
+    document.body.appendChild(canvas);
+
+    // Show a manual download button after preview
+    const downloadBtn = document.createElement("button");
+    downloadBtn.textContent = "Click here to download";
+    downloadBtn.className = "bg-green-600 text-white px-4 py-2 mt-4 rounded";
+    document.body.appendChild(downloadBtn);
+
+    downloadBtn.onclick = () => {
+      const link = document.createElement("a");
+      link.download = "now-playing.png";
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    };
   });
 }
 

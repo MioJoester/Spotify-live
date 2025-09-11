@@ -14,8 +14,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"> 
 
   <!-- card to share img converter -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-
+ 
   <script src="https://cdn.tailwindcss.com"></script>
   <style>body{background:#000}</style>
 </head>
@@ -69,9 +68,7 @@
    <i class="fab fa-discord"></i>
 </a>
 
-  <button onclick="captureNowPlaying()" class="mt-4 text-xl py-2 px-2 bg-transparent font-bold text">
-   <i class="fas fa-share"></i>
-</button>
+
        </div>
   </div>
 
@@ -203,27 +200,6 @@
     render();
     setInterval(render, 5000);
 
-function captureNowPlaying() {
-  const nowPlayingCard = document.getElementById("nowPlayingCard");
-
-  html2canvas(nowPlayingCard).then(canvas => {
-    // Add canvas to the page for preview (optional)
-    document.body.appendChild(canvas);
-
-    // Show a manual download button after preview
-    const downloadBtn = document.createElement("button");
-    downloadBtn.textContent = "Click here to download";
-    downloadBtn.className = "bg-green-600 text-white px-4 py-2 mt-4 rounded";
-    document.body.appendChild(downloadBtn);
-
-    downloadBtn.onclick = () => {
-      const link = document.createElement("a");
-      link.download = "now-playing.png";
-      link.href = canvas.toDataURL("image/png");
-      link.click();
-    };
-  });
-}
 
 
   </script>

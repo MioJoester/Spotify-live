@@ -3,31 +3,60 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Spotify Activity</title>
+  <title>Now Playing on Spotify</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>body{background:#000}</style>
 </head>
-<body class="min-h-screen flex items-center justify-center text-white">
+<body class="min-h-screen flex items-center justify-center text-white px-6">
 
-  <div class="text-center space-y-6">
-    <h1 class="text-3xl font-bold">See Your Spotify Activity</h1>
-    <p class="text-gray-400">Connect with Spotify to see your currently playing track.</p>
-    <button 
-      id="getStarted" 
-      class="px-6 py-3 bg-green-500 hover:bg-green-600 rounded-lg font-semibold text-lg">
-      Get Started
-    </button>
+  <div id="card" class="bg-gray-900 rounded-2xl p-8 shadow-lg text-center max-w-md w-full">
+    <h1 class="text-xl font-bold mb-4"> 
+      <i class="fab fa-spotify text-green-500"></i> Now Playing
+    </h1>
+
+    <p id="loading" class="text-gray-400">Loading your track...</p>
+
+    <div id="player" class="hidden">
+      <img id="art" class="w-48 h-48 object-cover rounded-xl mx-auto mb-4" alt="Album Art"/>
+      <h2 id="track" class="text-xl font-semibold"></h2>
+      <p id="artist" class="text-gray-300"></p>
+      <p id="state" class="text-sm text-gray-400 mt-2"></p>
+    </div>
   </div>
 
   <script>
-    const clientId = "6dcb2a5ea17f4e078bebf78254a8236d"; // replace with your app client id
-    const redirectUri = window.location.origin + "/live.html"; 
-    const scopes = "user-read-currently-playing user-read-recently-played";
+    // get ?code=... from URL
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get("code");
 
-    document.getElementById("getStarted").addEventListener("click", () => {
-      const authUrl = `https://accounts.spotify.com/authorize?client_id=${clientId}&response_type=code&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scopes)}`;
-      window.location.href = authUrl;
-    });
+    if (!code) {
+      document.getElementById("loading").textContent = "No code found. Please go back and connect Spotify.";
+    } else {
+      // ⚠️ Normally you'd send "code" to your backend to exchange for tokens
+      // Example:
+      // fetch("/api/spotify/token", { method:"POST", body: JSON.stringify({ code }) })
+
+      // For demo, we'll just simulate fetch
+      async function fetchNowPlaying() {
+        const res = await fetch("/api/spotify/now-playing"); // your backend
+        const data = await res.json();
+
+        if (data && data.is_playing) {
+          document.getElementById("loading").classList.add("hidden");
+          document.getElementById("player").classList.remove("hidden");
+
+          document.getElementById("art").src = data.item.album.images[0].url;
+          document.getElementById("track").textContent = data.item.name;
+          document.getElementById("artist").textContent = data.item.artists.map(a => a.name).join(", ");
+          document.getElementById("state").textContent = data.is_playing ? "▶️ Playing" : "⏸️ Paused";
+        } else {
+          document.getElementById("loading").textContent = "Nothing is playing right now.";
+        }
+      }
+
+      fetchNowPlaying();
+      setInterval(fetchNowPlaying, 10000);
+    }
   </script>
 </body>
 </html>
